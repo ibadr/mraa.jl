@@ -3,6 +3,7 @@ module mraa
 const libmraa = Libdl.find_library("libmraa.so.1")
 
 include("enums.jl")
+include("gpio.jl")
 
 function init()
     Result(ccall((:mraa_init, libmraa), Cint, ()))
