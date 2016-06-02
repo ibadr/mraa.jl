@@ -1,7 +1,8 @@
 import POSIXClock
 import mraa
 
-interval = 5000000 # 5000us
+function main()
+interval = 800000 # 800us
 
 pin = 58
 
@@ -9,17 +10,17 @@ mraa.init()
 gpio = mraa.gpio_init(pin)
 mraa.gpio_dir(gpio, mraa.GPIO_OUT)
 
-t = POSIXClock.timespec(0,0)
-t.sec += 5 # start after 5 sec
+t::POSIXClock.timespec = POSIXClock.gettime(POSIXClock.CLOCK_MONOTONIC)
 
 n = 0
 
-# Lock future memory
+# Lock future memory allocations, disable GC
 ccall(:mlockall, Cint, (Cint,), 2)
+gc_enable(false)
 
-while true
+@time while n < div(60000000000,interval) # run for a minute
   n+=1
-  POSIXClock.nanosleep!(t,interval)
+  t = POSIXClock.nanosleep(t,interval)
   if n%2==0
     mraa.gpio_write(gpio,1)
   else
@@ -27,5 +28,13 @@ while true
   end
 end
 
-
 mraa.gpio_close(gpio)
+
+# Unlock memory allocations, enable GC
+ccall(:munlockall, Cint, ())
+gc_enable(true)
+
+return nothing
+end
+
+main()
